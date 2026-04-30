@@ -3,143 +3,207 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Punching Bag</title>
+<title>Boxing Room</title>
 
 <style>
   body {
     margin: 0;
     height: 100vh;
-    background: radial-gradient(circle at center, #1f2937, #000);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-family: sans-serif;
-    color: white;
     overflow: hidden;
+    font-family: sans-serif;
+    background: radial-gradient(circle at 30% 30%, #1f2937, #000);
+    color: white;
   }
 
-  h1 {
-    font-size: 20px;
-    opacity: 0.7;
-    margin-bottom: 10px;
-  }
-
-  #counter {
-    margin-bottom: 20px;
-    color: #60a5fa;
-  }
-
-  /* 🥊 контейнер груши */
-  .bag-wrapper {
-    position: relative;
-    width: 220px;
-    height: 360px;
-  }
-
-  /* тень на полу */
-  .shadow {
-    position: absolute;
-    bottom: -40px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 180px;
-    height: 40px;
-    background: radial-gradient(rgba(0,0,0,0.6), transparent);
-    border-radius: 50%;
-  }
-
-  /* груша */
-  #bag {
+  /* общий контейнер сцены */
+  .scene {
     width: 100%;
     height: 100%;
-    object-fit: cover;
-    border-radius: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 60px;
+    box-sizing: border-box;
+  }
+
+  /* ===== РИНГ ===== */
+  .ring {
+    width: 420px;
+    height: 320px;
+    position: relative;
+    transform: perspective(800px) rotateX(10deg);
+  }
+
+  .ring-floor {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: repeating-linear-gradient(
+      45deg,
+      #111827,
+      #111827 20px,
+      #0b1220 20px,
+      #0b1220 40px
+    );
+    border: 3px solid #334155;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.7);
+  }
+
+  .ropes {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border: 2px solid rgba(255,255,255,0.2);
+    box-sizing: border-box;
+  }
+
+  .rope {
+    position: absolute;
+    width: 100%;
+    height: 2px;
+    background: rgba(255,255,255,0.15);
+  }
+
+  .rope:nth-child(1) { top: 20%; }
+  .rope:nth-child(2) { top: 50%; }
+  .rope:nth-child(3) { top: 80%; }
+
+  /* ===== ПОДВЕСНАЯ ГРУША ===== */
+  .bag-area {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .chain {
+    position: absolute;
+    top: 0;
+    width: 6px;
+    height: 120px;
+    background: linear-gradient(#666, #aaa, #444);
+    border-radius: 4px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.6);
+  }
+
+  /* форма груши */
+  .bag {
+    width: 160px;
+    height: 260px;
+    margin-top: 120px;
+    border-radius: 50% 50% 45% 45%;
+    background: linear-gradient(145deg, #3f3f46, #111827);
     box-shadow:
-      inset -20px -30px 60px rgba(0,0,0,0.6),
+      inset -20px -30px 60px rgba(0,0,0,0.7),
       inset 20px 30px 40px rgba(255,255,255,0.05),
-      0 30px 80px rgba(0,0,0,0.7);
+      0 30px 80px rgba(0,0,0,0.8);
     cursor: pointer;
-    transition: transform 0.12s ease;
-    filter: contrast(1.05) saturate(0.9);
+    position: relative;
+    transition: transform 0.1s;
+  }
+
+  /* швы груши */
+  .bag::before {
+    content: "";
+    position: absolute;
+    inset: 20px;
+    border: 1px dashed rgba(255,255,255,0.08);
+    border-radius: 40px;
   }
 
   /* удар */
   .hit {
-    animation: hit 0.15s ease;
+    animation: hit 0.18s ease;
   }
 
   @keyframes hit {
-    0%   { transform: scale(1) rotate(0deg); }
-    30%  { transform: scale(0.97) translateX(-4px) rotate(-1deg); }
-    60%  { transform: scale(1.02) translateX(4px) rotate(1deg); }
-    100% { transform: scale(1); }
+    0%   { transform: translateX(0) rotate(0); }
+    25%  { transform: translateX(-8px) rotate(-2deg); }
+    50%  { transform: translateX(10px) rotate(3deg); }
+    100% { transform: translateX(0) rotate(0); }
   }
 
-  /* цепь сверху (как у реальной груши) */
-  .chain {
+  /* UI */
+  .ui {
     position: absolute;
-    top: -60px;
-    left: 50%;
-    width: 6px;
-    height: 60px;
-    transform: translateX(-50%);
-    background: linear-gradient(#555, #999, #444);
-    border-radius: 3px;
-    box-shadow: 0 5px 10px rgba(0,0,0,0.6);
+    top: 30px;
+    left: 30px;
+  }
+
+  .counter {
+    font-size: 20px;
+    margin-bottom: 10px;
+    color: #60a5fa;
   }
 
   input {
-    margin-top: 20px;
     color: white;
   }
 
   .hint {
     font-size: 12px;
     opacity: 0.4;
-    margin-top: 10px;
+    margin-top: 6px;
   }
 </style>
 </head>
 
 <body>
 
-<h1>🥊 Punching Bag</h1>
-<div id="counter">Удары: 0</div>
+<div class="scene">
 
-<div class="bag-wrapper">
-  <div class="chain"></div>
-  <img id="bag"
-       src="https://images.unsplash.com/photo-1599058917212-d750089bc07e"
-       alt="bag">
-  <div class="shadow"></div>
+  <!-- РИНГ -->
+  <div class="ring">
+    <div class="ring-floor"></div>
+    <div class="ropes">
+      <div class="rope"></div>
+      <div class="rope"></div>
+      <div class="rope"></div>
+    </div>
+  </div>
+
+  <!-- ГРУША -->
+  <div class="bag-area">
+    <div class="chain"></div>
+    <div class="bag" id="bag"></div>
+  </div>
+
 </div>
 
-<input type="file" id="upload" accept="image/*">
-<div class="hint">ЛКМ по груше — удар</div>
+<!-- UI -->
+<div class="ui">
+  <div class="counter">Удары: <span id="hits">0</span></div>
+  <input type="file" id="upload" accept="image/*">
+  <div class="hint">ЛКМ по груше — удар</div>
+</div>
 
 <script>
 let hits = 0;
 
 const bag = document.getElementById("bag");
-const counter = document.getElementById("counter");
+const hitsEl = document.getElementById("hits");
 
+/* удар */
 bag.addEventListener("click", () => {
   hits++;
-  counter.textContent = "Удары: " + hits;
+  hitsEl.textContent = hits;
 
   bag.classList.add("hit");
-  setTimeout(() => bag.classList.remove("hit"), 150);
+  setTimeout(() => bag.classList.remove("hit"), 180);
 
-  // лёгкая вибрация
-  navigator.vibrate?.(40);
+  navigator.vibrate?.(30);
 });
 
+/* загрузка текстуры на грушу */
 document.getElementById("upload").addEventListener("change", (e) => {
   const file = e.target.files[0];
-  if (file) {
-    bag.src = URL.createObjectURL(file);
-  }
+  if (!file) return;
+
+  const url = URL.createObjectURL(file);
+  bag.style.backgroundImage = `url(${url})`;
+  bag.style.backgroundSize = "cover";
+  bag.style.backgroundPosition = "center";
 });
 </script>
 
