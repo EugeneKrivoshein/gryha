@@ -1,211 +1,564 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Boxing Room</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PUNCH IT</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-<style>
-  body {
-    margin: 0;
-    height: 100vh;
-    overflow: hidden;
-    font-family: sans-serif;
-    background: radial-gradient(circle at 30% 30%, #1f2937, #000);
-    color: white;
-  }
+    :root {
+      --bg: #0a0a0a;
+      --red: #d62828;
+      --red-dark: #8b0000;
+      --red-bright: #ff2222;
+      --gold: #f4a261;
+      --chain: #888;
+      --shadow: rgba(214,40,40,0.35);
+    }
 
-  /* общий контейнер сцены */
-  .scene {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 60px;
-    box-sizing: border-box;
-  }
+    html, body {
+      width: 100%; height: 100%;
+      background: var(--bg);
+      overflow: hidden;
+      font-family: 'Barlow Condensed', sans-serif;
+      cursor: crosshair;
+      user-select: none;
+    }
 
-  /* ===== РИНГ ===== */
-  .ring {
-    width: 420px;
-    height: 320px;
-    position: relative;
-    transform: perspective(800px) rotateX(10deg);
-  }
+    /* Background grain + vignette */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background:
+        radial-gradient(ellipse at 50% 0%, rgba(180,20,20,0.18) 0%, transparent 65%),
+        radial-gradient(ellipse at 50% 100%, rgba(0,0,0,0.8) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    body::after {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      opacity: 0.45;
+      pointer-events: none;
+    }
 
-  .ring-floor {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    background: repeating-linear-gradient(
-      45deg,
-      #111827,
-      #111827 20px,
-      #0b1220 20px,
-      #0b1220 40px
-    );
-    border: 3px solid #334155;
-    box-shadow: 0 30px 80px rgba(0,0,0,0.7);
-  }
+    /* Title */
+    #title {
+      position: fixed;
+      top: 28px; left: 0; right: 0;
+      text-align: center;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(2.8rem, 6vw, 5rem);
+      letter-spacing: 0.18em;
+      color: #fff;
+      text-shadow: 0 0 40px var(--red), 0 2px 0 var(--red-dark);
+      z-index: 10;
+      pointer-events: none;
+    }
+    #title span { color: var(--red-bright); }
 
-  .ropes {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    border: 2px solid rgba(255,255,255,0.2);
-    box-sizing: border-box;
-  }
+    /* Punch counter */
+    #counter {
+      position: fixed;
+      top: 28px; right: 36px;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.6rem;
+      color: var(--gold);
+      letter-spacing: 0.12em;
+      z-index: 10;
+      pointer-events: none;
+    }
+    #counter em { font-style: normal; font-size: 2.6rem; }
 
-  .rope {
-    position: absolute;
-    width: 100%;
-    height: 2px;
-    background: rgba(255,255,255,0.15);
-  }
+    /* Upload button */
+    #upload-btn {
+      position: fixed;
+      bottom: 32px; left: 50%; transform: translateX(-50%);
+      background: transparent;
+      border: 2px solid var(--red);
+      color: #fff;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.3rem;
+      letter-spacing: 0.2em;
+      padding: 10px 32px;
+      cursor: pointer;
+      z-index: 10;
+      transition: background 0.2s, box-shadow 0.2s, color 0.2s;
+      text-transform: uppercase;
+    }
+    #upload-btn:hover {
+      background: var(--red);
+      box-shadow: 0 0 24px var(--red-bright);
+      color: #fff;
+    }
+    #file-input { display: none; }
 
-  .rope:nth-child(1) { top: 20%; }
-  .rope:nth-child(2) { top: 50%; }
-  .rope:nth-child(3) { top: 80%; }
+    /* Scene */
+    #scene {
+      position: fixed; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding-top: 110px;
+      z-index: 5;
+    }
 
-  /* ===== ПОДВЕСНАЯ ГРУША ===== */
-  .bag-area {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-  }
+    /* Chain */
+    .chain-wrap {
+      width: 6px;
+      display: flex; flex-direction: column; align-items: center;
+      flex-shrink: 0;
+    }
+    .chain-link {
+      width: 10px; height: 14px;
+      border: 2.5px solid var(--chain);
+      border-radius: 50%;
+      margin: -3px 0;
+      background: transparent;
+    }
+    .chain-link:nth-child(odd) { transform: rotate(90deg); }
 
-  .chain {
-    position: absolute;
-    top: 0;
-    width: 6px;
-    height: 120px;
-    background: linear-gradient(#666, #aaa, #444);
-    border-radius: 4px;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.6);
-  }
+    /* Bag wrapper — all swing animation applied here */
+    #bag-wrap {
+      display: flex; flex-direction: column; align-items: center;
+      transform-origin: top center;
+      will-change: transform;
+      transition: transform 0.05s ease-out;
+    }
 
-  /* форма груши */
-  .bag {
-    width: 160px;
-    height: 260px;
-    margin-top: 120px;
-    border-radius: 50% 50% 45% 45%;
-    background: linear-gradient(145deg, #3f3f46, #111827);
-    box-shadow:
-      inset -20px -30px 60px rgba(0,0,0,0.7),
-      inset 20px 30px 40px rgba(255,255,255,0.05),
-      0 30px 80px rgba(0,0,0,0.8);
-    cursor: pointer;
-    position: relative;
-    transition: transform 0.1s;
-  }
+    /* Bag */
+    #bag {
+      width: 160px;
+      height: 260px;
+      position: relative;
+      cursor: crosshair;
+      flex-shrink: 0;
+    }
 
-  /* швы груши */
-  .bag::before {
-    content: "";
-    position: absolute;
-    inset: 20px;
-    border: 1px dashed rgba(255,255,255,0.08);
-    border-radius: 40px;
-  }
+    /* SVG bag shape */
+    #bag svg.bag-shape {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      filter: drop-shadow(0 8px 32px var(--shadow));
+    }
 
-  /* удар */
-  .hit {
-    animation: hit 0.18s ease;
-  }
+    /* Photo on bag */
+    #photo-layer {
+      position: absolute;
+      top: 38px; left: 50%;
+      transform: translateX(-50%);
+      width: 110px; height: 110px;
+      border-radius: 50%;
+      overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+      pointer-events: none;
+      z-index: 2;
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+    #photo-layer.visible { opacity: 1; }
+    #photo-layer img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      mix-blend-mode: multiply;
+      filter: contrast(1.1) saturate(0.85);
+    }
 
-  @keyframes hit {
-    0%   { transform: translateX(0) rotate(0); }
-    25%  { transform: translateX(-8px) rotate(-2deg); }
-    50%  { transform: translateX(10px) rotate(3deg); }
-    100% { transform: translateX(0) rotate(0); }
-  }
+    /* Bag stripe overlay */
+    #bag-stripe {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      z-index: 3;
+    }
 
-  /* UI */
-  .ui {
-    position: absolute;
-    top: 30px;
-    left: 30px;
-  }
+    /* Sweat / impact splash canvas */
+    #splash-canvas {
+      position: fixed; inset: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 20;
+    }
 
-  .counter {
-    font-size: 20px;
-    margin-bottom: 10px;
-    color: #60a5fa;
-  }
+    /* Hit flash overlay */
+    #flash {
+      position: fixed; inset: 0;
+      background: radial-gradient(circle at var(--fx) var(--fy), rgba(255,30,30,0.55) 0%, transparent 60%);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 15;
+      transition: opacity 0.04s;
+    }
 
-  input {
-    color: white;
-  }
+    /* Screen shake keyframe */
+    @keyframes screenshake {
+      0%   { transform: translate(0,0) rotate(0deg); }
+      15%  { transform: translate(-4px, 2px) rotate(-0.4deg); }
+      30%  { transform: translate(4px, -2px) rotate(0.4deg); }
+      45%  { transform: translate(-3px, 3px) rotate(-0.3deg); }
+      60%  { transform: translate(3px, -1px) rotate(0.2deg); }
+      75%  { transform: translate(-2px, 1px) rotate(-0.1deg); }
+      100% { transform: translate(0,0) rotate(0deg); }
+    }
+    body.shaking { animation: screenshake 0.35s ease-out; }
 
-  .hint {
-    font-size: 12px;
-    opacity: 0.4;
-    margin-top: 6px;
-  }
-</style>
+    /* Hint text */
+    #hint {
+      position: fixed;
+      bottom: 90px; left: 50%; transform: translateX(-50%);
+      color: rgba(255,255,255,0.22);
+      font-size: 1rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      pointer-events: none;
+      z-index: 10;
+    }
+  </style>
 </head>
-
 <body>
 
-<div class="scene">
+<div id="title">PUNCH <span>IT</span></div>
+<div id="counter">УДАРЫ: <em id="hit-count">0</em></div>
 
-  <!-- РИНГ -->
-  <div class="ring">
-    <div class="ring-floor"></div>
-    <div class="ropes">
-      <div class="rope"></div>
-      <div class="rope"></div>
-      <div class="rope"></div>
+<div id="scene">
+  <!-- Chain -->
+  <div class="chain-wrap" id="chain-el">
+    <div class="chain-link"></div>
+    <div class="chain-link"></div>
+    <div class="chain-link"></div>
+    <div class="chain-link"></div>
+    <div class="chain-link"></div>
+    <div class="chain-link"></div>
+    <div class="chain-link"></div>
+  </div>
+
+  <!-- Bag + chain as swinging unit -->
+  <div id="bag-wrap">
+    <div class="chain-wrap">
+      <div class="chain-link"></div>
+      <div class="chain-link"></div>
+      <div class="chain-link"></div>
+    </div>
+
+    <div id="bag">
+      <!-- Bag SVG shape -->
+      <svg class="bag-shape" viewBox="0 0 160 260" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="bagGrad" cx="38%" cy="35%" r="65%">
+            <stop offset="0%" stop-color="#e83030"/>
+            <stop offset="60%" stop-color="#c01818"/>
+            <stop offset="100%" stop-color="#6b0000"/>
+          </radialGradient>
+          <radialGradient id="shineGrad" cx="30%" cy="20%" r="55%">
+            <stop offset="0%" stop-color="rgba(255,255,255,0.28)"/>
+            <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+          </radialGradient>
+          <clipPath id="bagClip">
+            <path d="M80 4 C40 4 12 32 12 80 L12 190 C12 228 44 256 80 256 C116 256 148 228 148 190 L148 80 C148 32 120 4 80 4Z"/>
+          </clipPath>
+        </defs>
+        <!-- Main body -->
+        <path d="M80 4 C40 4 12 32 12 80 L12 190 C12 228 44 256 80 256 C116 256 148 228 148 190 L148 80 C148 32 120 4 80 4Z"
+              fill="url(#bagGrad)"/>
+        <!-- Shine -->
+        <path d="M80 4 C40 4 12 32 12 80 L12 190 C12 228 44 256 80 256 C116 256 148 228 148 190 L148 80 C148 32 120 4 80 4Z"
+              fill="url(#shineGrad)"/>
+        <!-- Horizontal stripes -->
+        <g clip-path="url(#bagClip)">
+          <rect x="0" y="88" width="160" height="10" fill="rgba(0,0,0,0.18)"/>
+          <rect x="0" y="158" width="160" height="10" fill="rgba(0,0,0,0.18)"/>
+          <!-- Center seam -->
+          <rect x="77" y="0" width="6" height="260" fill="rgba(0,0,0,0.12)"/>
+        </g>
+        <!-- Top cap -->
+        <ellipse cx="80" cy="12" rx="28" ry="10" fill="#8b0000" opacity="0.7"/>
+        <!-- Bottom cap -->
+        <ellipse cx="80" cy="250" rx="36" ry="12" fill="#6b0000" opacity="0.8"/>
+        <!-- Outline -->
+        <path d="M80 4 C40 4 12 32 12 80 L12 190 C12 228 44 256 80 256 C116 256 148 228 148 190 L148 80 C148 32 120 4 80 4Z"
+              fill="none" stroke="#8b0000" stroke-width="2"/>
+      </svg>
+
+      <!-- Photo -->
+      <div id="photo-layer"><img id="photo-img" src="" alt="" /></div>
+
+      <!-- Crack/stripe overlay (SVG injected on hit) -->
+      <svg id="bag-stripe" viewBox="0 0 160 260" fill="none" xmlns="http://www.w3.org/2000/svg"></svg>
     </div>
   </div>
-
-  <!-- ГРУША -->
-  <div class="bag-area">
-    <div class="chain"></div>
-    <div class="bag" id="bag"></div>
-  </div>
-
 </div>
 
-<!-- UI -->
-<div class="ui">
-  <div class="counter">Удары: <span id="hits">0</span></div>
-  <input type="file" id="upload" accept="image/*">
-  <div class="hint">ЛКМ по груше — удар</div>
-</div>
+<!-- Flash overlay -->
+<div id="flash"></div>
+<!-- Particle canvas -->
+<canvas id="splash-canvas"></canvas>
+
+<input type="file" id="file-input" accept="image/*" />
+<button id="upload-btn" onclick="document.getElementById('file-input').click()">📷 Загрузить фото</button>
+<div id="hint">Нажми на грушу чтобы ударить</div>
 
 <script>
-let hits = 0;
+(() => {
+  const bagWrap   = document.getElementById('bag-wrap');
+  const bagEl     = document.getElementById('bag');
+  const flash     = document.getElementById('flash');
+  const canvas    = document.getElementById('splash-canvas');
+  const ctx       = canvas.getContext('2d');
+  const hitCount  = document.getElementById('hit-count');
+  const photoLayer= document.getElementById('photo-layer');
+  const photoImg  = document.getElementById('photo-img');
+  const fileInput = document.getElementById('file-input');
 
-const bag = document.getElementById("bag");
-const hitsEl = document.getElementById("hits");
+  let hits = 0;
+  let swingAngle = 0;
+  let swingVel   = 0;
+  let particles  = [];
+  let raf;
 
-/* удар */
-bag.addEventListener("click", () => {
-  hits++;
-  hitsEl.textContent = hits;
+  // Resize canvas
+  function resizeCanvas() {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
 
-  bag.classList.add("hit");
-  setTimeout(() => bag.classList.remove("hit"), 180);
+  // === SWING PHYSICS ===
+  const GRAVITY   = 0.004; // spring constant
+  const DAMPING   = 0.88;
+  let   swinging  = false;
 
-  navigator.vibrate?.(30);
-});
+  function startSwingLoop() {
+    if (swinging) return;
+    swinging = true;
+    requestAnimationFrame(swingStep);
+  }
 
-/* загрузка текстуры на грушу */
-document.getElementById("upload").addEventListener("change", (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
+  function swingStep() {
+    swingVel += -GRAVITY * swingAngle;
+    swingVel *= DAMPING;
+    swingAngle += swingVel;
 
-  const url = URL.createObjectURL(file);
-  bag.style.backgroundImage = `url(${url})`;
-  bag.style.backgroundSize = "cover";
-  bag.style.backgroundPosition = "center";
-});
+    bagWrap.style.transform = `rotate(${swingAngle}deg)`;
+
+    if (Math.abs(swingAngle) > 0.01 || Math.abs(swingVel) > 0.005) {
+      requestAnimationFrame(swingStep);
+    } else {
+      swingAngle = 0;
+      swingVel   = 0;
+      bagWrap.style.transform = 'rotate(0deg)';
+      swinging = false;
+    }
+  }
+
+  // === PARTICLES ===
+  class Particle {
+    constructor(x, y, color) {
+      this.x = x; this.y = y;
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 3 + Math.random() * 8;
+      this.vx = Math.cos(angle) * speed;
+      this.vy = Math.sin(angle) * speed - 4;
+      this.life = 1;
+      this.decay = 0.025 + Math.random() * 0.04;
+      this.size = 3 + Math.random() * 7;
+      this.color = color;
+      this.gravity = 0.25;
+    }
+    update() {
+      this.x  += this.vx;
+      this.y  += this.vy;
+      this.vy += this.gravity;
+      this.vx *= 0.97;
+      this.life -= this.decay;
+    }
+    draw(ctx) {
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, this.life);
+      ctx.fillStyle = this.color;
+      ctx.shadowBlur = 8;
+      ctx.shadowColor = this.color;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size * this.life, 0, Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  // Star burst lines
+  class StarBurst {
+    constructor(x, y) {
+      this.x = x; this.y = y;
+      this.lines = [];
+      for (let i = 0; i < 8; i++) {
+        const angle = (i / 8) * Math.PI * 2;
+        this.lines.push({ angle, len: 20 + Math.random()*30 });
+      }
+      this.life = 1;
+      this.decay = 0.08;
+    }
+    update() { this.life -= this.decay; }
+    draw(ctx) {
+      if (this.life <= 0) return;
+      ctx.save();
+      ctx.globalAlpha = this.life;
+      ctx.strokeStyle = '#ff4444';
+      ctx.lineWidth = 2.5;
+      ctx.shadowBlur = 12;
+      ctx.shadowColor = '#ff2222';
+      for (const l of this.lines) {
+        const progress = 1 - this.life;
+        const sx = this.x + Math.cos(l.angle) * l.len * 0.1 * progress;
+        const sy = this.y + Math.sin(l.angle) * l.len * 0.1 * progress;
+        const ex = this.x + Math.cos(l.angle) * l.len;
+        const ey = this.y + Math.sin(l.angle) * l.len;
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.lineTo(ex, ey);
+        ctx.stroke();
+      }
+      // Center dot
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, 4 * this.life, 0, Math.PI*2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  let effects = [];
+
+  function spawnHitEffect(x, y) {
+    // Particles
+    const colors = ['#ff3333','#ff6633','#ffcc00','#ff2222','#ffffff'];
+    for (let i = 0; i < 22; i++) {
+      particles.push(new Particle(x, y, colors[Math.floor(Math.random()*colors.length)]));
+    }
+    // Starburst
+    effects.push(new StarBurst(x, y));
+  }
+
+  function animLoop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    particles = particles.filter(p => p.life > 0);
+    particles.forEach(p => { p.update(); p.draw(ctx); });
+
+    effects = effects.filter(e => e.life > 0);
+    effects.forEach(e => { e.update(); e.draw(ctx); });
+
+    requestAnimationFrame(animLoop);
+  }
+  requestAnimationFrame(animLoop);
+
+  // === HIT ===
+  function onHit(e) {
+    e.preventDefault();
+    hits++;
+    hitCount.textContent = hits;
+
+    const rect = bagEl.getBoundingClientRect();
+    const cx   = rect.left + rect.width  / 2;
+    const cy   = rect.top  + rect.height / 2;
+    const mx   = e.clientX ?? (e.touches?.[0]?.clientX ?? cx);
+    const my   = e.clientY ?? (e.touches?.[0]?.clientY ?? cy);
+
+    // Determine punch direction for swing
+    const side = mx < cx ? 1 : -1;
+    const power = 6 + Math.random() * 5;
+    swingVel += side * (power * 0.035);
+    swingAngle += side * (power * 0.1);
+    startSwingLoop();
+
+    // Flash
+    flash.style.setProperty('--fx', mx + 'px');
+    flash.style.setProperty('--fy', my + 'px');
+    flash.style.opacity = '1';
+    setTimeout(() => flash.style.opacity = '0', 80);
+
+    // Screen shake
+    document.body.classList.remove('shaking');
+    void document.body.offsetWidth;
+    document.body.classList.add('shaking');
+    setTimeout(() => document.body.classList.remove('shaking'), 350);
+
+    // Particles at click point
+    spawnHitEffect(mx, my);
+
+    // Deform bag briefly (squish)
+    bagEl.style.transition = 'transform 0.06s';
+    bagEl.style.transform  = `scaleX(${1 + 0.12*side}) scaleY(0.92)`;
+    setTimeout(() => {
+      bagEl.style.transform = 'scaleX(1) scaleY(1)';
+    }, 90);
+
+    // Sound (synthesized via Web Audio)
+    playPunchSound();
+  }
+
+  bagEl.addEventListener('mousedown', onHit);
+  bagEl.addEventListener('touchstart', onHit, { passive: false });
+
+  // === SOUND ===
+  let audioCtx;
+  function getAudioCtx() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return audioCtx;
+  }
+  function playPunchSound() {
+    try {
+      const ac = getAudioCtx();
+      // Low thud
+      const osc = ac.createOscillator();
+      const gain = ac.createGain();
+      osc.connect(gain); gain.connect(ac.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(120, ac.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(40, ac.currentTime + 0.15);
+      gain.gain.setValueAtTime(0.9, ac.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.22);
+      osc.start(); osc.stop(ac.currentTime + 0.25);
+
+      // Attack transient
+      const buf = ac.createBuffer(1, ac.sampleRate * 0.05, ac.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = (Math.random()*2-1) * (1 - i/data.length);
+      const src = ac.createBufferSource();
+      const g2  = ac.createGain();
+      src.buffer = buf;
+      src.connect(g2); g2.connect(ac.destination);
+      g2.gain.setValueAtTime(0.4, ac.currentTime);
+      g2.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.06);
+      src.start();
+    } catch(e) {}
+  }
+
+  // === PHOTO UPLOAD ===
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    photoImg.src = url;
+    photoLayer.classList.add('visible');
+    // Distress the photo layer slightly
+    photoImg.style.filter = 'contrast(1.15) saturate(0.75) sepia(0.2)';
+  });
+
+  // Cursor fist on bag hover
+  bagEl.addEventListener('mouseenter', () => document.body.style.cursor = '🥊');
+  bagEl.addEventListener('mouseleave', () => document.body.style.cursor = 'crosshair');
+
+  // Dynamic cursor SVG
+  const fistCursorSVG = `<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'>
+    <text y='26' font-size='26'>🥊</text>
+  </svg>`;
+  const fistURL = 'data:image/svg+xml,' + encodeURIComponent(fistCursorSVG);
+  bagEl.style.cursor = `url("${fistURL}") 4 28, pointer`;
+
+})();
 </script>
-
 </body>
 </html>
